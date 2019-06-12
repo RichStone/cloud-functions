@@ -46,7 +46,10 @@ def verify_invoices(request):
         Address on invoice must match address of building
         :return: boolean
         """
-        pass
+        if invoices[0]['BuildingAddress'] == verified_data['building_address']:
+            return True
+        else:
+            return False
 
     def is_inside_floor_range():
         """
@@ -85,6 +88,25 @@ def verify_invoices(request):
         """
         pass
 
+    def execute_verification():
+        obvious_verifications = [
+            is_correct_address(),
+        ]
+        if True in obvious_verifications:
+            print('good')
+        elif False in obvious_verifications:
+            # TODO: send to manual
+            print('send for manual correction')
+
+        if is_severe_outlier():
+            # TODO: send immediate message
+            print('attention')
+        elif is_mild_outlier():
+            # TODO: aggregate and send message
+            print('look into it')
+        else:
+            print('no outliers detected 👍')
+
     client = storage.Client()
     bucket = client.get_bucket('tukdata')
 
@@ -93,7 +115,8 @@ def verify_invoices(request):
 
     building = json.loads(building_raw_data)
     invoices = json.loads(invoices_raw_data)
-
     verified_data = get_verified_data()
 
-    return building, invoices
+    execute_verification()
+
+    return building, invoices, verified_data
