@@ -11,12 +11,13 @@ def get_verified_data():
     return {
         'building_id': '139498',
         'building_address': '7 Arkansas Hill',
-        'floors_amount': 8,
+        'min_floor': -2,
+        'max_floor': 8,
         'typical_cost': [
             {
                 'type': 'energy',
                 'min': 22000,
-                'max': 29000,
+                'max': 3000,
                 'median': 26000,
                 'mean': 25555
             },
@@ -56,17 +57,35 @@ def verify_invoices(request):
         Floor number on invoice cannot not be greater or smaller than the amount of floors
         :return: boolean
         """
-        pass
+        try:
+            if invoices[0]['BuildingFloor'] >= verified_data['min_floor'] and invoices[0]['BuildingFloor'] <= verified_data['max_floor']:
+                return True
+            else:
+                return False
+        except TypeError:
+            # TODO: handle floor specific or wrongly written floors
+            print('Type missmatch, either the floor was not written as int or the invoicing is not floor specific')
+            return False
 
-    def is_severe_outlier(threshold_percent=100):
+    def is_severe_outlier(threshold_percent=0.5):
         """
-        Anomalies that surpass the min or max by a high percentage should be reported immediately
+        Anomalies that surpass the max of verified data by a high percentage should be reported immediately
         :param threshold_percent:
         :return: boolean
         """
-        pass
+        verified_max = verified_data['typical_cost'][0]['max']
+        invoice_sum = invoices[0]['PaymentSum']
+        allowed_surpass = verified_max * threshold_percent
+        current_discrepancy = invoice_sum - verified_max
 
-    def is_mild_outlier(threshold_percent=50):
+        if current_discrepancy > allowed_surpass:
+            print('The discrepancy {} between verified max {} and the payment sum {} is too high'
+                  .format(current_discrepancy, verified_max, invoice_sum))
+            return True
+        else:
+            return False
+
+    def is_mild_outlier(threshold_percent=0.5):
         """
         Anomalies within a reasonable percentage from the mean must be reported in aggregate to the accounting deparment.
         :param threshold_percent:
@@ -89,12 +108,11 @@ def verify_invoices(request):
         pass
 
     def execute_verification():
-        obvious_verifications = [
+        formal_verifications = [
             is_correct_address(),
+            is_inside_floor_range(),
         ]
-        if True in obvious_verifications:
-            print('good')
-        elif False in obvious_verifications:
+        if False in formal_verifications:
             # TODO: send to manual
             print('send for manual correction')
 
@@ -120,3 +138,7 @@ def verify_invoices(request):
     execute_verification()
 
     return building, invoices, verified_data
+
+
+if __name__ == '__main__':
+    b, i, v = verify_invoices(dict)
