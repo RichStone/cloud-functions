@@ -1,5 +1,8 @@
 from google.cloud import storage
 import json
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+import os
 
 
 def get_verified_data():
@@ -39,6 +42,22 @@ def get_verified_data():
             }
         ]
     }
+
+
+def send_alert_message(message_html='default text'):
+    message = Mail(
+        from_email='from_email@example.com',
+        to_emails='richard.has.fun@gmail.com',
+        subject='Sending with Twilio SendGrid is Fun',
+        html_content=message_html)
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+    except Exception as e:
+        print(str(e))
 
 
 def verify_invoices(request):
@@ -108,6 +127,7 @@ def verify_invoices(request):
         pass
 
     def execute_verification():
+
         formal_verifications = [
             is_correct_address(),
             is_inside_floor_range(),
@@ -119,6 +139,7 @@ def verify_invoices(request):
         if is_severe_outlier():
             # TODO: send immediate message
             print('attention')
+            send_alert_message('There is a severe outlier, we may as well go bankrupt')
         elif is_mild_outlier():
             # TODO: aggregate and send message
             print('look into it')
