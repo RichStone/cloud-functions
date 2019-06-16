@@ -168,6 +168,9 @@ def verify_invoices(request):
     execute_verification()
 
     log_string = log_stream.getvalue()
+    # in the cloud function environment log_stream becomes an object
+    if not isinstance(log_string, str):
+        log_string = 'results in logs'
 
     response = {
         'verify_function_result': log_string
