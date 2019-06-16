@@ -167,7 +167,11 @@ def verify_invoices(request):
 
     execute_verification()
 
-    return log_stream.getvalue()
+    response = {
+        'verify_function_result': log_stream.getvalue()
+    }
+
+    return json.dumps(response)
 
 
 if __name__ == '__main__':
