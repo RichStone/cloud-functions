@@ -3,6 +3,7 @@ import json
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import os
+import logging
 
 
 def get_verified_data():
@@ -53,14 +54,22 @@ def send_alert_message(message_html='default text'):
     try:
         sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
         response = sg.send(message)
-        print(response.status_code)
-        print(response.body)
-        print(response.headers)
+        logging.info(response.status_code)
+        logging.info(response.body)
+        logging.info(response.headers)
     except Exception as e:
-        print(str(e))
+        logging.info(str(e))
 
 
 def verify_invoices(request):
+    try:
+        from cStringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
+    log_stream = StringIO()
+    logging.basicConfig(stream=log_stream, level=logging.INFO)
+
     def is_correct_address():
         """
         Address on invoice must match address of building
@@ -83,7 +92,7 @@ def verify_invoices(request):
                 return False
         except TypeError:
             # TODO: handle floor specific or wrongly written floors
-            print('Type missmatch, either the floor was not written as int or the invoicing is not floor specific')
+            logging.info('Type missmatch, either the floor was not written as int or the invoicing is not floor specific')
             return False
 
     def is_severe_outlier(threshold_percent=0.5):
@@ -98,7 +107,7 @@ def verify_invoices(request):
         current_discrepancy = invoice_sum - verified_max
 
         if current_discrepancy > allowed_surpass:
-            print('The discrepancy {} between verified max {} and the payment sum {} is too high'
+            logging.info('The discrepancy {} between verified max {} and the payment sum {} is too high'
                   .format(current_discrepancy, verified_max, invoice_sum))
             return True
         else:
@@ -134,17 +143,17 @@ def verify_invoices(request):
         ]
         if False in formal_verifications:
             # TODO: send to manual
-            print('send for manual correction')
+            logging.info('send for manual correction')
 
         if is_severe_outlier():
             # TODO: send immediate message
-            print('attention')
-            send_alert_message('There is a severe outlier, we may as well go bankrupt')
+            logging.info('attention')
+            logging.info('notify accountant clarification')
         elif is_mild_outlier():
             # TODO: aggregate and send message
-            print('look into it')
+            logging.info('look into it')
         else:
-            print('no outliers detected 👍')
+            logging.info('no outliers detected 👍')
 
     client = storage.Client()
     bucket = client.get_bucket('tukdata')
@@ -158,8 +167,9 @@ def verify_invoices(request):
 
     execute_verification()
 
-    return building, invoices, verified_data
+    return log_stream.getvalue()
 
 
 if __name__ == '__main__':
-    b, i, v = verify_invoices(dict)
+    s = verify_invoices(dict)
+    logging.info(s)
