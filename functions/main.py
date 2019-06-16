@@ -167,10 +167,11 @@ def verify_invoices(request):
 
     execute_verification()
 
-    log_string = log_stream.getvalue()
-    # in the cloud function environment log_stream becomes an object
-    if not isinstance(log_string, str):
-        log_string = 'dump successfully verified; detailed results in logs'
+    # log_string = log_stream.getvalue()
+    # in the cloud function environment log_stream becomes an object which is not recognized by isinstance as object
+    # because it's not entering the if clause
+    # if not isinstance(log_string, str):
+    log_string = 'dump successfully verified; detailed results in logs'
 
     response = {
         'verify_function_result': log_string
